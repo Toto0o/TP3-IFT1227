@@ -1,0 +1,14 @@
+.data
+buffer:			.space	400
+msg	:			.asciiz	"Entrez un nombre (-1 pour terminer): "
+msg_max_input:	.asciiz	"Dépassement de la capacité maximale"
+taille:			.word	0
+
+
+main:
+
+
+trier:
+
+
+afficher:
