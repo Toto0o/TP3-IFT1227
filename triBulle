@@ -1,8 +1,10 @@
 .data
 buffer:			.space	400
 taille:			.word 0
+print:			.word 0
+new_line_count:		.word 0
 msg_input:		.asciiz	"Entrez un nombre (-1 pour terminer):  "
-msg_depassement:	.asciiz "Vous avez dépassez la taille maximale permise"
+msg_depassement:	.asciiz "Vous avez dépassez la taille maximale permise"			
 
 .text
 main:	
@@ -12,6 +14,8 @@ main:
 	
 	la $a0, buffer
 	la $a1, taille
+	la $a2, print
+	la $a3, new_line_count
 	jal afficher
 	
 	li $v0,10
@@ -52,7 +56,7 @@ input:
 	beq $t0, $t2, fin_saisir
 	
 	#sinon, stocker dans buffer
-	lw $a0 4($sp)	#contient pointer vers buffer
+	lw $a0, 4($sp)	#contient pointer vers buffer
 	lw $a1, 8($sp)
 	lw $t2, 0($a1)	#modifier la valeur de taille
 	
@@ -71,19 +75,87 @@ fin_saisir:
 	jr $ra
 	
 afficher:
+	#stocker les arguments dans la stack
+	addi $sp, $sp, -20
+	sw $ra, 0($sp)
+	sw $a0, 4($sp)
+	sw $a1, 8($sp)
+	sw $a2, 12($sp)
+	sw $a3, 16($sp)
+	
+boucle_afficher:
+	#load des arguments
+	lw $a0, 4($sp)
+	
+	lw $a1, 8($sp)
 	lw $t1, 0($a1) #taille
 	
-	add $t2, $t1, $a0 #adresse a imprimer
-	lw $t0, 0($t2)
+	lw $a2, 12($sp)
+	lw $s0, 0($a2) #nombre de caractère imprimé
+	
+	#adresse a imprimer + print
+	add $t2, $s0, $a0 
+	lw $a0, 0($t2)
 	li $v0, 1
 	syscall
 	
-	addi $t1, $t1, -4
-	beqz $t1, end_afficher
-	j afficher
+	#tab pour espacer les print
+	li $v0, 11
+	addi $a0, $0, '\t'
+	syscall
+	
+	#verifier pour nouvelle ligne apres 4 print
+	lw $a3, 16($sp)	#new_line_count
+	lw $s1, 0($a3)
+	addi $s1, $s1, 1
+	sw $s1, 0($a3)
+	li $s2, 4
+	beq $s1, $s2, new_line
+end_new_line:
+	#incrementer le nombre de print
+	addi $s0, $s0, 4
+	sw $s0, 0($a2)
+	
+	#si taille = nombre de print
+	beq $t1, $s0, end_afficher
+	
+	#continuer la boucle de print
+	j boucle_afficher
+	
+new_line:
+	#pour inprimer une nouvelle ligne
+	
+	#remettre le compte d'élément de 4 par ligne a 0
+	lw $a3, 16($sp)
+	lw $s1, 0($a3)
+	addi $s1, $s1, -4
+	sw $s1, 0($a3)
+	
+	#imprimer sur une nouvelle ligne
+	li $v0, 11
+	addi $a0, $0, '\n'
+	syscall
+	
+	#retour à l'impression
+	j end_new_line
+	
 
 end_afficher:
+	#pour commencer le print final sur une nouvelle ligne
+	li $v0, 11
+	addi $a0, $0, '\n'
+	syscall
+	
+	#unstack les arguments et saut vers le main
+	lw $ra, 0($sp)
+	lw $a0, 4($sp)
+	lw $a1, 8($sp)
+	lw $a2, 12($sp)
+	lw $a3, 16($sp)
+	addi $sp, $sp, 20
 	jr $ra
+
+trier:
 	
 	
 	
