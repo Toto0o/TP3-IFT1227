@@ -18,6 +18,16 @@ main:
 	la $a3, new_line_count
 	jal afficher
 	
+	la $a0, buffer
+	la $a1, taille
+	jal trier
+	
+	la $a0, buffer
+	la $a1, taille
+	la $a2, print
+	la $a3, new_line_count
+	jal afficher
+	
 	li $v0,10
 	syscall
 	
@@ -64,8 +74,8 @@ input:
 	add $t1, $a0, $t2	
 	sw $t0, 0($t1)
 	
-	#incremter taille +4
-	addi $t2, $t2, 4
+	
+	addi $t2, $t2, 4 #incremter taille +4
 	sw $t2, 0($a1)
 	j boucle_saisir
 
@@ -153,11 +163,69 @@ end_afficher:
 	lw $a2, 12($sp)
 	lw $a3, 16($sp)
 	addi $sp, $sp, 20
+	sw $0, 0($a2)
+	sw $0, 0($a3)
 	jr $ra
 
-trier:
+trier:	
+	addi $sp, $sp, -20
+	sw $ra, 0($sp)
+	sw $a0, 4($sp)	#buffer
+	sw $a1, 8($sp)	#taille
+	sw $0, 12($sp)	#tri_count
+	li $s0, 1
+	sw $s0, 16($sp)	#echange
 	
 	
+boucle_while:
+	lw $a0, 4($sp)	#buffer
+	lw $a1, 8($sp)	#taille
+	lw $a2, 12($sp)	#tri_count
+	lw $a3, 16($sp)	#echange
+	
+	sw $0, 12($sp)	#pour assurer de faire le for_loop a partir de 0
+	
+	beqz $a3, fin_trier 	#while echange
+	
+	sw $0, 16($sp)		#echange = False (0)
+	
+for_loop:
+	lw $t0, 12($sp)	#tri_count		
+	lw $t1, 0($a1)	#taille
+	
+	addi $t1, $t1, -4
+	beq $t0, $t1, boucle_while	#for i in range (len(t)-1)
+	
+	add $s0, $a0, $t0
+	lw $t2, 0($s0)	#t[i]
+	
+	addi $s1, $s0, 4
+	lw $t3, 0($s1)	#t[i+1]
+	
+	addi $t0, $t0, 4 #incrementer tri_count (compteur de la boucle for)
+	sw $t0, 12($sp)
+	blt $t2, $t3, for_loop
+	
+	move $t4, $t2	#temp = t[i]
+	move $t2, $t3	#t[i] = t[i+1]
+	move $t3, $t4	#t[i+1] = temp
+	
+	sw $t2, 0($s0)
+	sw $t3, 0($s1)
+	
+	li $s0, 1
+	sw $s0, 16($sp)	#echange = True
+	j for_loop
+	
+fin_trier:
+	#unstack et callback
+	lw $ra, 0($sp)	#callback
+	lw $a0, 4($sp)	#buffer
+	lw $a1, 8($sp)	#taille
+	lw $a2, 12($sp)	#tri_count
+	lw $a3, 16($sp)	#echange
+	addi $sp, $sp, 20
+	jr $ra
 	
 	
 	
